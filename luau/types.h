@@ -40,8 +40,15 @@
 #endif
 #endif
 
+typedef struct lua_State luau_State;
+
 typedef struct luau_config_t luau_config_t;
+typedef struct luau_t luau_t;
 
 struct luau_config_t {
 	unsigned int unused;
+};
+
+struct luau_t {
+    luau_State* state;
 };

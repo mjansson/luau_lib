@@ -24,7 +24,12 @@ if target.is_linux():
   extralibs += ['X11', 'Xext', 'GL']
 
 luau_lib = generator.lib(module = 'luau', sources = [
-  'luau.c', 'version.c'])
+  'luau.c', 'version.c'] +
+  [os.path.join('luau', 'VM', 'src', item) for item in [
+    'lapi.c', 'laux.c', 'lbaselib.c', 'lbitlib.c', 'lbuiltins.c', 'lcorolib.c', 'ldblib.c', 'ldebug.c', 'ldo.c', 'lfunc.c', 'lgc.c',
+    'linit.c', 'lmathlib.c', 'lmem.c', 'lobject.c', 'loslib.c', 'lperf.c', 'lstate.c', 'lstring.c', 'lstrlib.c', 'ltable.c',
+    'ltablib.c', 'ltm.c', 'lutf8lib.c', 'lvmexecute.c', 'lvmload.c', 'lvmutils.c']],
+  includepaths = [os.path.join('luau', 'luau', 'VM', 'include')])
 
 #if not target.is_ios() and not target.is_android():
   #configs = [config for config in toolchain.configs if config not in ['profile', 'deploy']]

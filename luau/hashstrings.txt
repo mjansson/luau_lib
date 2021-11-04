@@ -1,0 +1,3 @@
+
+HASH_LUA                                lua
+HASH_LUAU                               luau

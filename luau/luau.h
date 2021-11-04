@@ -21,9 +21,10 @@
 
 #include <luau/build.h>
 #include <luau/types.h>
+#include <luau/hashstrings.h>
 
 LUAU_API int
-lua_module_initialize(const luau_config_t config);
+luau_module_initialize(const luau_config_t config);
 
 LUAU_API void
 luau_module_finalize(void);
@@ -47,3 +48,11 @@ luau_module_config(void);
 LUAU_API void
 luau_module_parse_config(const char* path, size_t path_size, const char* buffer, size_t size, const json_token_t* tokens,
                         size_t tokens_count);
+
+//! Allocate environment
+LUAU_API luau_t*
+luau_allocate(void);
+
+//! Shutdown and free resources
+LUAU_API void
+luau_deallocate(luau_t* env);
