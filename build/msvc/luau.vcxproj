@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>luau</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ProjectGuid>{020E748E-9C78-4F97-9B43-3761724781FF}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(SolutionDir)\build.default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemGroup>
+    <ClCompile Include="..\..\luau\luau.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lapi.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\laux.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lbaselib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lbitlib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lbuiltins.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lcorolib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\ldblib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\ldebug.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\ldo.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lfunc.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lgc.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\linit.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lmathlib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lmem.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lobject.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\loslib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lperf.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lstate.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lstring.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lstrlib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\ltable.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\ltablib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\ltm.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lutf8lib.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lvmexecute.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lvmload.c" />
+    <ClCompile Include="..\..\luau\luau\VM\src\lvmutils.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\luau\build.h" />
+    <ClInclude Include="..\..\luau\hashstrings.h" />
+    <ClInclude Include="..\..\luau\luau.h" />
+    <ClInclude Include="..\..\luau\luau\VM\include\lua.h" />
+    <ClInclude Include="..\..\luau\luau\VM\include\luaconf.h" />
+    <ClInclude Include="..\..\luau\luau\VM\include\lualib.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lapi.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lbuiltins.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lbytecode.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lcommon.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\ldebug.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\ldo.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lfunc.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lgc.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lmem.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lnumutils.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lobject.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lstate.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lstring.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\ltable.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\ltm.h" />
+    <ClInclude Include="..\..\luau\luau\VM\src\lvm.h" />
+    <ClInclude Include="..\..\luau\types.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\luau\hashstrings.txt" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\luau\luau\VM\include;$(ProjectDir)..\..\..\foundation;$(ProjectDir)..\..\..\foundation_lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LUAU_COMPILE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
