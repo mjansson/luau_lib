@@ -52,8 +52,8 @@ luau_module_config(void) {
 }
 
 void
-luau_module_parse_config(const char* path, size_t path_size, const char* buffer, size_t size, const json_token_t* tokens,
-                         size_t tokens_count) {
+luau_module_parse_config(const char* path, size_t path_size, const char* buffer, size_t size,
+                         const json_token_t* tokens, size_t tokens_count) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(path_size);
 	FOUNDATION_UNUSED(buffer);
@@ -62,15 +62,15 @@ luau_module_parse_config(const char* path, size_t path_size, const char* buffer,
 	FOUNDATION_UNUSED(tokens_count);
 }
 
-static int
+static void
 luau_panic(luau_State* state, int errcode) {
 	FOUNDATION_UNUSED(errcode);
 	string_const_t errmsg = {0, 0};
 	errmsg.str = lua_tolstring(state, -1, &errmsg.length);
 	if (!errmsg.length)
 		errmsg = string_const(STRING_CONST("<no error message>"));
-	log_errorf(HASH_LUAU, ERROR_SCRIPT, STRING_CONST("unprotected error in call to Lua API: %.*s (%d)"), STRING_FORMAT(errmsg), errcode);
-	return 0;
+	log_errorf(HASH_LUAU, ERROR_SCRIPT, STRING_CONST("unprotected error in call to Lua API: %.*s (%d)"),
+	           STRING_FORMAT(errmsg), errcode);
 }
 
 static void*
@@ -105,10 +105,10 @@ luau_allocate(void) {
 	callbacks->panic = luau_panic;
 
 	// Disable automagic gc
-	//lua_gc(state, LUA_GCCOLLECT, 0);
+	// lua_gc(state, LUA_GCCOLLECT, 0);
 
 	env->state = state;
-	//env->calldepth = 0;
+	// env->calldepth = 0;
 
 #if 0
 #if BUILD_ENABLE_LUA_THREAD_SAFE
@@ -135,7 +135,7 @@ luau_deallocate(luau_t* env) {
 	if (!env)
 		return;
 
-	//FOUNDATION_ASSERT(env->calldepth == 0);
+	// FOUNDATION_ASSERT(env->calldepth == 0);
 	FOUNDATION_ASSERT(env->state);
 
 #if 0
