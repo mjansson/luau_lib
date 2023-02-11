@@ -74,8 +74,8 @@ luau_panic(luau_State* state, int errcode) {
 }
 
 static void*
-luau_allocator(luau_State* state, void* userdata, void* block, size_t oldsize, size_t newsize) {
-	FOUNDATION_UNUSED(state, userdata);
+luau_allocator(void* userdata, void* block, size_t oldsize, size_t newsize) {
+	FOUNDATION_UNUSED(userdata);
 	if (!newsize && oldsize) {
 		memory_deallocate(block);
 	} else if (newsize) {

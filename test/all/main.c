@@ -11,12 +11,13 @@
  */
 
 #include <foundation/foundation.h>
+#include <luau/luau.h>
 #include <test/test.h>
 
-static volatile bool _test_should_start;
-static volatile bool _test_have_focus;
-static volatile bool _test_should_terminate;
-static volatile bool _test_memory_tracker;
+static volatile bool test_start_flag;
+static volatile bool test_focus_flag;
+static volatile bool test_terminate_flag;
+static volatile bool test_memory_tracker;
 
 static void*
 event_loop(void* arg) {
@@ -26,7 +27,7 @@ event_loop(void* arg) {
 
 	event_stream_set_beacon(system_event_stream(), &thread_self()->beacon);
 
-	while (!_test_should_terminate) {
+	while (!test_should_terminate()) {
 		block = event_stream_process(system_event_stream());
 		event = 0;
 		while ((event = event_next(block, event))) {
@@ -34,14 +35,14 @@ event_loop(void* arg) {
 				case FOUNDATIONEVENT_START:
 #if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID
 					log_debug(HASH_TEST, STRING_CONST("Application start event received"));
-					_test_should_start = true;
+					test_start_flag = true;
 #endif
 					break;
 
 				case FOUNDATIONEVENT_TERMINATE:
 #if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID
 					log_debug(HASH_TEST, STRING_CONST("Application stop/terminate event received"));
-					_test_should_terminate = true;
+					test_terminate_flag = true;
 					break;
 #else
 					log_warn(HASH_TEST, WARNING_SUSPICIOUS, STRING_CONST("Terminating tests due to event"));
@@ -49,11 +50,11 @@ event_loop(void* arg) {
 #endif
 
 				case FOUNDATIONEVENT_FOCUS_GAIN:
-					_test_have_focus = true;
+					test_focus_flag = true;
 					break;
 
 				case FOUNDATIONEVENT_FOCUS_LOST:
-					_test_have_focus = false;
+					test_focus_flag = false;
 					break;
 
 				default:
@@ -88,17 +89,20 @@ test_event(event_t* event) {
 static void
 test_log_view_append(const char* msg, size_t length) {
 #if FOUNDATION_PLATFORM_IOS
-	test_text_view_append(delegate_uiwindow(), 1, msg, length);
+	test_text_view_append(delegate_window(), 1, msg, length);
+#if !BUILD_ENABLE_LOG
+	printf("%.*s", (int)length, msg);
+#endif
 #elif FOUNDATION_PLATFORM_ANDROID
-	jclass _test_log_class = 0;
-	jmethodID _test_log_append = 0;
+	jclass test_log_class = 0;
+	jmethodID test_log_append = 0;
 	const struct JNINativeInterface** jnienv = thread_attach_jvm();
-	_test_log_class = (*jnienv)->GetObjectClass(jnienv, android_app()->activity->clazz);
-	if (_test_log_class)
-		_test_log_append = (*jnienv)->GetMethodID(jnienv, _test_log_class, "appendLog", "(Ljava/lang/String;)V");
-	if (_test_log_append) {
+	test_log_class = (*jnienv)->GetObjectClass(jnienv, android_app()->activity->clazz);
+	if (test_log_class)
+		test_log_append = (*jnienv)->GetMethodID(jnienv, test_log_class, "appendLog", "(Ljava/lang/String;)V");
+	if (test_log_append) {
 		jstring jstr = (*jnienv)->NewStringUTF(jnienv, msg);
-		(*jnienv)->CallVoidMethod(jnienv, android_app()->activity->clazz, _test_log_append, jstr);
+		(*jnienv)->CallVoidMethod(jnienv, android_app()->activity->clazz, test_log_append, jstr);
 		(*jnienv)->DeleteLocalRef(jnienv, jstr);
 	}
 	thread_detach_jvm();
@@ -112,7 +116,7 @@ static void
 test_log_handler(hash_t context, error_level_t severity, const char* msg, size_t length) {
 	FOUNDATION_UNUSED(context);
 	FOUNDATION_UNUSED(severity);
-	if (_test_should_terminate)
+	if (test_terminate_flag)
 		return;
 	if (!log_stdout())
 		return;
@@ -126,7 +130,7 @@ test_log_handler(hash_t context, error_level_t severity, const char* msg, size_t
 #if !BUILD_MONOLITHIC
 
 void
-test_exception_handler(const char* dump_file, size_t length) {
+FOUNDATION_ATTRIBUTE(noreturn) test_exception_handler(const char* dump_file, size_t length) {
 	FOUNDATION_UNUSED(dump_file);
 	FOUNDATION_UNUSED(length);
 	log_error(HASH_TEST, ERROR_EXCEPTION, STRING_CONST("Test raised exception"));
@@ -139,23 +143,23 @@ test_exception_handler(const char* dump_file, size_t length) {
 
 #else
 
-#include <resource/resource.h>
-#include <network/network.h>
-#include <luau/luau.h>
-
 static void
-test_parse_config(const char* path, size_t path_size, const char* buffer, size_t size, const json_token_t* tokens,
-                  size_t num_tokens) {
-	resource_module_parse_config(path, path_size, buffer, size, tokens, num_tokens);
-	network_module_parse_config(path, path_size, buffer, size, tokens, num_tokens);
-	luau_module_parse_config(path, path_size, buffer, size, tokens, num_tokens);
+test_parse_config(const char* buffer, size_t size, const json_token_t* tokens, size_t tokens_count) {
+	resource_module_parse_config(buffer, size, tokens, tokens_count);
+	render_module_parse_config(buffer, size, tokens, tokens_count);
+	ui_module_parse_config(buffer, size, tokens, tokens_count);
 }
 
 #endif
 
 bool
 test_should_terminate(void) {
-	return _test_should_terminate;
+	return test_terminate_flag;
+}
+
+bool
+test_have_focus(void) {
+	return test_focus_flag;
 }
 
 int
@@ -166,22 +170,22 @@ main_initialize(void) {
 	size_t iarg, asize;
 	const string_const_t* cmdline = environment_command_line();
 
-	_test_memory_tracker = true;
+	test_memory_tracker = true;
 	for (iarg = 0, asize = array_size(cmdline); iarg < asize; ++iarg) {
 		if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--no-memory-tracker")))
-			_test_memory_tracker = false;
+			test_memory_tracker = false;
 	}
 
-	if (_test_memory_tracker)
+	if (test_memory_tracker)
 		memory_set_tracker(memory_tracker_local());
 
 	memset(&config, 0, sizeof(config));
 
 	memset(&application, 0, sizeof(application));
-	application.name = string_const(STRING_CONST("Foundation library test suite"));
+	application.name = string_const(STRING_CONST("Luau library test suite"));
 	application.short_name = string_const(STRING_CONST("test_all"));
 	application.company = string_const(STRING_CONST(""));
-	application.version = foundation_version();
+	application.version = luau_module_version();
 	application.flags = APPLICATION_UTILITY;
 	application.exception_handler = test_exception_handler;
 
@@ -193,36 +197,34 @@ main_initialize(void) {
 
 #if !FOUNDATION_PLATFORM_IOS && !FOUNDATION_PLATFORM_ANDROID
 
-	_test_should_start = true;
+	test_start_flag = true;
 
 #endif
 
 	ret = foundation_initialize(memory_system_malloc(), application, config);
 
 #if BUILD_MONOLITHIC
-	network_config_t network_config;
-	memset(&network_config, 0, sizeof(network_config));
-	if (ret >= 0)
-		ret = network_module_initialize(network_config);
-
-	resource_config_t resource_config;
-	memset(&resource_config, 0, sizeof(resource_config));
-	resource_config.enable_local_source = true;
-	resource_config.enable_local_cache = true;
-	resource_config.enable_remote_sourced = true;
-	resource_config.enable_remote_compiled = true;
-	if (ret >= 0)
-		ret = resource_module_initialize(resource_config);
-
-	luau_config_t luau_config;
-	memset(&luau_config, 0, sizeof(luau_config));
-	if (ret >= 0)
-		ret = luau_module_initialize(luau_config);
-
-	if (ret >= 0) {
-		test_set_suitable_working_directory();
-		test_load_config(test_parse_config);
+	if (ret == 0) {
+		window_config_t window_config;
+		memset(&window_config, 0, sizeof(window_config));
+		ret = window_module_initialize(window_config);
 	}
+	if (ret == 0) {
+		resource_config_t resource_config;
+		memset(&resource_config, 0, sizeof(resource_config));
+		resource_config.enable_local_cache = true;
+		resource_config.enable_local_source = true;
+		ret = resource_module_initialize(resource_config));
+	}
+	if (ret == 0) {
+		ret = render_module_initialize();
+	}
+	if (ret == 0) {
+		ret = ui_module_initialize();
+	}
+
+	test_set_suitable_working_directory();
+	test_load_config(test_parse_config);
 #endif
 	return ret;
 }
@@ -233,9 +235,7 @@ main_initialize(void) {
 
 #if BUILD_MONOLITHIC
 extern int
-test_bind_run(void);
-extern int
-test_foundation_run(void);
+test_ui_run(void);
 typedef int (*test_run_fn)(void);
 
 static void*
@@ -316,9 +316,10 @@ main_run(void* main_arg) {
 
 	log_set_suppress(HASH_TEST, ERRORLEVEL_DEBUG);
 
-	log_infof(HASH_TEST, STRING_CONST("Foundation library v%s built for %s using %s (%.*s%.*s)"),
-	          string_from_version_static(foundation_version()).str, FOUNDATION_PLATFORM_DESCRIPTION,
-	          FOUNDATION_COMPILER_DESCRIPTION, STRING_FORMAT(build_name), STRING_FORMAT(build_type));
+	log_infof(HASH_TEST, STRING_CONST("Luau library v%s built for %s using %s (%.*s%.*s) [%" PRIsize " cores]"),
+	          string_from_version_static(luau_module_version()).str, FOUNDATION_PLATFORM_DESCRIPTION,
+	          FOUNDATION_COMPILER_DESCRIPTION, STRING_FORMAT(build_name), STRING_FORMAT(build_type),
+	          system_hardware_threads());
 
 	thread_initialize(&event_thread, event_loop, 0, STRING_CONST("event_thread"), THREAD_PRIORITY_NORMAL, 0);
 	thread_start(&event_thread);
@@ -329,7 +330,7 @@ main_run(void* main_arg) {
 		thread_sleep(10);
 
 #if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID
-	while (!_test_should_start) {
+	while (!test_should_start()) {
 #if FOUNDATION_PLATFORM_ANDROID
 		system_process_events();
 #endif
@@ -345,7 +346,7 @@ main_run(void* main_arg) {
 
 #if BUILD_MONOLITHIC
 
-	test_run_fn tests[] = {test_bind_run, test_foundation_run, 0};
+	test_run_fn tests[] = {test_ui_run, 0};
 
 #if FOUNDATION_PLATFORM_ANDROID
 
@@ -389,7 +390,7 @@ main_run(void* main_arg) {
 
 #if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID
 
-	while (!_test_should_terminate && _test_have_focus && (remain_counter < 50)) {
+	while (!test_should_terminate() && test_have_focus() && (remain_counter < 50)) {
 		system_process_events();
 		thread_sleep(100);
 		++remain_counter;
@@ -417,17 +418,13 @@ main_run(void* main_arg) {
 #if FOUNDATION_PLATFORM_MACOS
 	// Also search for test applications
 	string_const_t app_pattern = string_const(STRING_CONST("^test-.*\\.app$"));
-	regex_t* app_regex = regex_compile(app_pattern.str, app_pattern.length);
-	string_t* subdirs = fs_subdirs(STRING_ARGS(environment_executable_directory()));
-	for (size_t idir = 0, dirsize = array_size(subdirs); idir < dirsize; ++idir) {
-		if (regex_match(app_regex, subdirs[idir].str, subdirs[idir].length, 0, 0)) {
-			string_t exe_path = string_clone(subdirs[idir].str, subdirs[idir].length - 4);
-			array_push(exe_paths, exe_path);
-			array_push(exe_flags, PROCESS_MACOS_USE_OPENAPPLICATION);
-		}
+	string_t* app_paths =
+	    fs_matching_subdirs(STRING_ARGS(environment_executable_directory()), STRING_ARGS(app_pattern), false);
+	for (size_t iapp = 0, appsize = array_size(app_paths); iapp < appsize; ++iapp) {
+		array_push(exe_paths, app_paths[iapp]);
+		array_push(exe_flags, PROCESS_MACOS_USE_OPENAPPLICATION);
 	}
-	string_array_deallocate(subdirs);
-	regex_deallocate(app_regex);
+	array_deallocate(app_paths);
 #endif
 	for (iexe = 0, exesize = array_size(exe_paths); iexe < exesize; ++iexe) {
 		string_const_t* process_args = 0;
@@ -443,7 +440,7 @@ main_run(void* main_arg) {
 		process_set_working_directory(process, STRING_ARGS(environment_executable_directory()));
 		process_set_flags(process, PROCESS_ATTACHED | exe_flags[iexe]);
 
-		if (!_test_memory_tracker)
+		if (!test_memory_tracker)
 			array_push(process_args, string_const(STRING_CONST("--no-memory-tracker")));
 		process_set_arguments(process, process_args, array_size(process_args));
 
@@ -458,11 +455,14 @@ main_run(void* main_arg) {
 		array_deallocate(process_args);
 
 		if (process_result != 0) {
-#if (FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID) && !BUILD_ENABLE_LOG
+#if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID
 			char buffer[64];
 			string_const_t msg =
 			    string_format(buffer, sizeof(buffer), "Test %.*s failed\n", STRING_FORMAT(exe_paths[iexe]));
+#if !BUILD_ENABLE_LOG
 			test_log_view_append(STRING_ARGS(msg));
+#endif
+			system_show_alert(STRING_ARGS(msg));
 #endif
 			if (process_result >= PROCESS_INVALID_ARGS)
 				log_warnf(HASH_TEST, WARNING_SUSPICIOUS, STRING_CONST("Tests failed, process terminated with error %x"),
@@ -489,6 +489,10 @@ main_run(void* main_arg) {
 
 	log_info(HASH_TEST, STRING_CONST("All tests passed"));
 
+#if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID
+	system_show_alert(STRING_CONST("All tests passed"));
+#endif
+
 exit:
 
 	if (exe_paths)
@@ -497,7 +501,7 @@ exit:
 
 #endif
 
-	_test_should_terminate = true;
+	test_terminate_flag = true;
 
 	thread_signal(&event_thread);
 	thread_join(&event_thread);
@@ -520,9 +524,11 @@ main_finalize(void) {
 #endif
 
 #if BUILD_MONOLITHIC
-	luau_module_finalize();
+	ui_module_finalize();
+	render_module_finalize();
 	resource_module_finalize();
-	network_module_finalize();
+	window_module_finalize();
 #endif
+
 	foundation_finalize();
 }

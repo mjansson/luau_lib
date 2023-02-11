@@ -29,7 +29,7 @@ luau_lib = generator.lib(module = 'luau', sources = [
     'lapi.c', 'laux.c', 'lbaselib.c', 'lbitlib.c', 'lbuiltins.c', 'lcorolib.c', 'ldblib.c', 'ldebug.c', 'ldo.c', 'lfunc.c', 'lgc.c',
     'linit.c', 'lmathlib.c', 'lmem.c', 'lobject.c', 'loslib.c', 'lperf.c', 'lstate.c', 'lstring.c', 'lstrlib.c', 'ltable.c',
     'ltablib.c', 'ltm.c', 'lutf8lib.c', 'lvmexecute.c', 'lvmload.c', 'lvmutils.c']],
-  includepaths = [os.path.join('luau', 'luau', 'VM', 'include')])
+  includepaths = [os.path.join('luau', 'luau', 'VM', 'include'), os.path.join('luau', 'luau', 'Common', 'include')])
 
 #if not target.is_ios() and not target.is_android():
   #configs = [config for config in toolchain.configs if config not in ['profile', 'deploy']]
@@ -80,6 +80,6 @@ if target.is_ios() or target.is_android():
     generator.bin(module = '', sources = [os.path.join(module, 'main.c') for module in test_cases] + test_extrasources, binname = 'test-all', basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs + gllibs, frameworks = glframeworks, resources = test_resources, includepaths = includepaths, variables = extravariables)
 else:
   #Build one binary per test case
-  generator.bin(module = 'all', sources = ['main.c'], binname = 'test-all', basepath = 'test', implicit_deps = [luau_lib], libs = dependlibs + extralibs, includepaths = includepaths)
+  generator.bin(module = 'all', sources = ['main.c'], binname = 'test-all', basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs, includepaths = includepaths)
   for test in test_cases:
     generator.bin(module = test, sources = ['main.c'], binname = 'test-' + test, basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs + gllibs, frameworks = glframeworks, includepaths = includepaths, variables = extravariables)
