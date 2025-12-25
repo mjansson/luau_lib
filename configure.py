@@ -80,6 +80,7 @@ if target.is_ios() or target.is_android():
     generator.bin(module = '', sources = [os.path.join(module, 'main.c') for module in test_cases] + test_extrasources, binname = 'test-all', basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs + gllibs, frameworks = glframeworks, resources = test_resources, includepaths = includepaths, variables = extravariables)
 else:
   #Build one binary per test case
-  generator.bin(module = 'all', sources = ['main.c'], binname = 'test-all', basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs, includepaths = includepaths)
+  if not generator.is_subninja:
+    generator.bin(module = 'all', sources = ['main.c'], binname = 'test-all', basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs, includepaths = includepaths)
   for test in test_cases:
     generator.bin(module = test, sources = ['main.c'], binname = 'test-' + test, basepath = 'test', implicit_deps = [luau_lib], libs = ['test'] + dependlibs + extralibs + gllibs, frameworks = glframeworks, includepaths = includepaths, variables = extravariables)
