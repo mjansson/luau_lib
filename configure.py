@@ -13,7 +13,8 @@ dependlibs = ['luau', 'foundation']
 extralibs = []
 extravariables = {}
 
-generator = generator.Generator(project = 'luau', dependlibs = dependlibs, variables = [('bundleidentifier', 'com.maniccoder.luau.$(binname)')])
+#Vendored upstream Luau sources, don't apply our warning flags to them
+generator = generator.Generator(project = 'luau', dependlibs = dependlibs, variables = [('bundleidentifier', 'com.maniccoder.luau.$(binname)'), ('nowarning', True)])
 target = generator.target
 writer = generator.writer
 toolchain = generator.toolchain
